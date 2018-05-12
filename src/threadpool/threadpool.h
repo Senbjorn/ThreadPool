@@ -120,10 +120,8 @@ FixedThreadPool::FixedThreadPool(int thr) {
 }
 
 void FixedThreadPool::do_work() {
-	std::cout << "!" << std::endl;
 	while (true) {
 		std::unique_lock<std::mutex> lock(mutex);
-		std::cout << "on wait" << std::endl;
 		cond.wait(lock, [this] {return !tasks.empty();});
 		Executable& task = *(tasks.front());
 		tasks.pop();
