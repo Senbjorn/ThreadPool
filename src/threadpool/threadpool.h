@@ -103,7 +103,34 @@ public:
 		cond.notify_one();
 	}
 	
-	static void do_work(FixedThreadPool &ftp);
+	void do_work();
 };
+
+template<typename R, typename ...Args>
+Task<R, Args...>::Task(std::function<R(Args...)> f, Args... args) {
+	function = [f, args...] () -> R {
+		return f(args...);
+	};
+}
+
+FixedThreadPool::FixedThreadPool(int thr) {
+	for (int i = 0; i < thr; i++) {
+		workers.push_back(std::thread(&FixedThreadPool::do_work, this));
+	}
+}
+
+void FixedThreadPool::do_work() {
+	std::cout << "!" << std::endl;
+	while (true) {
+		std::unique_lock<std::mutex> lock(mutex);
+		std::cout << "on wait" << std::endl;
+		cond.wait(lock, [this] {return !tasks.empty();});
+		Executable& task = *(tasks.front());
+		tasks.pop();
+		lock.unlock();
+		task.execute();
+	}
+}
+
 
 #endif
